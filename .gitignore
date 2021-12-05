@@ -1,0 +1,8 @@
+/venv
+/.meltano
+.env
+docker-compose.local.yml
+privkey.pem
+server.crt
+server.key
+server.req

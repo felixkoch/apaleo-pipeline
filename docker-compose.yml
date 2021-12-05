@@ -1,0 +1,105 @@
+version: '3.8'
+
+x-meltano-image: &meltano-image
+  image: tagungshotelsinfo/apaleo-pipeline
+
+x-meltano-env: &meltano-env
+  MELTANO_DATABASE_URI: postgresql://postgres:CHANGEME2@meltano-system-db/meltano
+
+  TAP_APALEO_CLIENT_ID: ""
+  TAP_APALEO_CLIENT_SECRET: ""
+  TAP_APALEO_START_DATE: "2017-01-01T00:00:00Z"
+  TARGET_POSTGRES_HOST: apaleo-db
+  TARGET_POSTGRES_DATABASE: "apaleo"
+  TARGET_POSTGRES_USERNAME: "postgres"
+  TARGET_POSTGRES_PASSWORD: "CHANGEME1"
+  TARGET_POSTGRES_SCHEMA: "public"
+  TARGET_POSTGRES_MAX_BATCH_ROWS: 5000
+
+
+x-airflow-env: &airflow-env
+  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgres://postgres:CHANGEME3@airflow-metadata-db/airflow
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+services:
+  apaleo-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: CHANGEME1
+      POSTGRES_DB: apaleo
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - apaleo_postgresql_data:/var/lib/postgresql/data
+      - ./server.crt:/var/lib/postgresql/server.crt:ro
+      - ./server.key:/var/lib/postgresql/server.key:ro
+    command: >
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/server.crt
+      -c ssl_key_file=/var/lib/postgresql/server.key
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    networks:
+      - meltano
+    restart: unless-stopped
+
+  meltano-system-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: CHANGEME2
+      POSTGRES_DB: meltano
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - meltano_postgresql_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    networks:
+      - meltano
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *meltano-image
+    command: invoke airflow scheduler
+    environment:
+      <<: *meltano-env
+      <<: *airflow-env
+    volumes:
+      - meltano_elt_logs_data:/project/.meltano/logs/elt
+    expose:
+      - 8793
+    depends_on:
+      - meltano-system-db
+      - airflow-metadata-db
+    networks:
+      - meltano
+      - airflow
+    restart: unless-stopped
+ 
+  airflow-metadata-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: CHANGEME3
+      POSTGRES_DB: airflow
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - airflow_postgresql_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    networks:
+      - airflow
+    restart: unless-stopped
+
+networks:
+  meltano:
+  airflow:
+
+volumes:
+  apaleo_postgresql_data:
+    driver: local
+  meltano_postgresql_data:
+    driver: local
+  meltano_elt_logs_data:
+    driver: local
+  airflow_postgresql_data:
+    driver: local

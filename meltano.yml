@@ -1,0 +1,36 @@
+version: 1
+send_anonymous_usage_stats: true
+project_id: 351d22b6-3d0d-4763-a483-81cb91f9b370
+plugins:
+  extractors:
+  - name: tap-apaleo
+    namespace: tap_apaleo
+    pip_url: git+https://github.com/felixkoch/tap-apaleo.git
+    executable: tap-apaleo
+    capabilities:
+    - state
+    - catalog
+    - discover
+    settings:
+    - name: client_id
+    - name: client_secret
+      kind: password
+    - name: start_date
+      value: '2017-01-01T00:00:00Z'
+  loaders:
+  - name: target-postgres
+    variant: datamill-co
+    pip_url: singer-target-postgres
+  orchestrators:
+  - name: airflow
+    pip_url: psycopg2 apache-airflow==2.1.2 --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.1.2/constraints-${MELTANO__PYTHON_VERSION}.txt
+  files:
+  - name: airflow
+    pip_url: git+https://gitlab.com/meltano/files-airflow.git
+schedules:
+- name: apaleo-to-postgres
+  extractor: tap-apaleo
+  loader: target-postgres
+  transform: skip
+  interval: '@hourly'
+  start_date: 2017-01-01 00:00:00

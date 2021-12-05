@@ -1,0 +1,20 @@
+/.git
+
+# .gitignore
+/venv
+/.meltano
+/.env
+/ui.cfg
+/output
+
+# transform/.gitignore
+/transform/target/
+/transform/dbt_modules/
+/transform/logs/
+
+# custom
+/docker-compose.local.yml
+privkey.pem
+server.crt
+server.key
+server.req
