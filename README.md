@@ -36,8 +36,8 @@ chmod 600 server.key #as expected from postgres
 
 ```
 certbot certonly --standalone -d DOMAIN
-cp /etc/letsencrypt/live/h2955624.stratoserver.net/privkey.pem ./server.key
-cp /etc/letsencrypt/live/h2955624.stratoserver.net/fullchain.pem ./server.cert
+cp /etc/letsencrypt/live/DOMAIN/privkey.pem ./server.key
+cp /etc/letsencrypt/live/DOMAIN/fullchain.pem ./server.cert
 
 chown 999:999 server.key #as expected from postgres
 chmod 600 server.key #as expected from postgres
